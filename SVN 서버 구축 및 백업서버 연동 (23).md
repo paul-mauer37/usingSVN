@@ -94,6 +94,7 @@ $ svn status				# 저장소 변동사항 확인
 $ svn add 변동파일				# 변동된 파일을 add 해준다.
 $ svn commit -m '로그 메시지'		# add된 파일을 commit하며 로그 메시지를 남긴다.
 --- commit이 이루어지면 새로운 리비전으로 기록되며 svn서버 저장소에 반영된다.
+# svn status 해석 : https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
 
 # 3-3. 저장소 내 파일 또는 디렉토리 삭제
 $ svn delete svn://localhost/저장소/삭제디렉토리
