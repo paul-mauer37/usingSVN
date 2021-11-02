@@ -1,0 +1,203 @@
+# SVN 서버 구축 및 백업서버 연동 (3/3)
+
+
+
+### SVN 백업 설계
+
+1. Dev_com과 Bac_com에 svn 설치가 완료되었다면, **Dev_com에 개발용 svn저장소(이하, dev라 지칭)를 마련**한다. **dev에서 진행되는 개발** 내용은 개발자가 svn 서버에 **커밋**한다.
+
+   ```bash
+   # Dev_com
+   $ svn status
+   $ svn add 파일
+   $ svn commit -m "로그메시지"
+   $ svn log
+   ```
+
+   
+
+2. **Bac_com에서 백업 데이터가 저장될 디렉토리에 dev(개발용 svn저장소)를 checkout**한다. 그리고 정해진 시간과 주기별로 **`svn update`가 진행되어 dev의 개발 내용이 최신 상태로 유지**되도록 한다.
+
+   ```bash
+   # Bac_com
+   # 대상 저장소와 내려받을 디렉토리 위치 지정
+   $ svn checkout svn://dev(개발용svn)/저장소 작업디렉토리
+   # 최신버전(update)으로 내려받을 작업 디렉토리 지정
+   $ svn update /작업디렉토리
+   ```
+
+   
+
+3. `crontab`에 등록해 **정해진 시간과 주기별**로 백업이 진행될 수 있도록 **자동화**한다.
+
+   ```bash
+   # 크론탭 등록
+   $ crontab -e
+   0 6 * * * /usr/local/sbin/backup.sh
+   backup.sh
+   ---
+   #!/bin/sh
+   svn update /작업디렉토리
+   ---
+   
+   # 크론탭 리스트 확인
+   $ crontab -l
+   
+   파일.sh : shell script의 약자로 shell이 실행하는 명령어 모음 파일
+   #!/bin/sh : 가볍다. 기능 적다. 대부분 사용
+   #!/bin/bash : 무겁다. 기능 많다. 주로 로그인에 사용
+   ```
+
+   
+
+
+
+여기서 주의사항은, **Dev_com에서 새롭게 checkout을 시도할 때는 충분한 고민**이 필요하고 **Bac_com의 백업 데이터 디렉토리를 함부러 조작해선 안된다!**
+
+`crontab`에서 파일이 실행될 때, user의 권한이 필요하거나 비밀번호를 물을 수 있는데 비밀번호가 저장되어 있지 않다면 `crontab`이 실행되지 않을 수 있으니 이에 대한 조치가 필요하다.
+
+
+
+
+
+
+
+여담)
+
+기존 SVN 백업 서버 구축 설계는 `svnsync`와 `svnadmin dump`를 이용할 계획이었으나, **`svnsync`의 무용함(결국 checkout을 해야하므로, sync없이 checkout하는 것과 동일)**과 **`svnadmin dump`의 번거로움(load를 하려면 저장소가 필요함)** 이 존재해 간편한 방식을 채택했다.
+
+자세히 >>>
+
+```
+...
+svnsync를 해도 각 저장소가 연결만 되지 로컬에 파일이 생성되지는 않음. 결국 로컬에 sync된 저장소 파일을 받아오기 위해선 checkout을 해야하는데, 그렇다면 결국 sync의 과정없이 svn checkout으로 작업디렉토리 직접 받아오는 것이 간편함. 그러므로 svnsync를 사용하지 않고 checkout으로 곧바로 Bac_com의 로컬 디렉토리에 받아왔다. 즉, svnsync는 결국 개별적인 2개의 저장소를 연결해주는 역할일 뿐이다.
+svnadmin dump를 통해 백업 혹은 증분백업을 하려했지만, 증분 백업 특성상 리비전번호 혹은 날짜를 기준으로 dump하게된다. dump와 load를 위해선 결국 새로운 저장소가 필요했고, 
+
+@@@
+test 결과 백업을 원하는 trunk디렉토리가 제대로 백업되지 않았다. svndumpfilter 를 이용해 다시 dump를 시도해볼 필요가 있다.
+```
+
+
+
+
+
+ref) https://blog.naver.com/antimidal/221078722917
+
+ref) https://blog.enleaf.me/311
+
+ref) https://blog.naver.com/slimcdp/222455611252
+
+
+
+
+
+---
+
+
+
+
+
+##  TroubleShooting
+
+1. E205007
+
+```bash
+# svn 실행시 로그를 작성하기 위한 에디터가 필요한데, 그것에 대한 정의가 없어서 발생하는 에러.
+# 환경변수 SVN_EDITOR를 설정해주면 해결된다.
+$ svn mkdir svn://localhost/저장소/trunk
+svn: E205007: 로그 메시지를 구하기 위해 외부 프로그램을 사용할 수 없습니다. SVN_EDITOR 환경 변수를 설정하시거나 --message (-m) 또는 --file (-F) 옵션을 사용하세요
+svn: E205007: 환경변수 SVN_EDITOR, VISUAL, EDITOR 중 하나는 설정하거나, 'editor-cmd' 를 구성화일에 명시해야합니다
+
+# home 디렉토리에 숨김 파일로 존재하는 .bash_profile에 추가
+$ vi /home/.bash_profile
+SVN_EDITOR=/usr/bin/vim
+export SVN_EDITOR
+
+# source명령으로 적용
+$ source /home/.bash_profile
+```
+
+
+
+2. Previous operation has not finished; run 'cleanup' if it was interrupted
+
+CentOS7에 SQLite 설치하기(SQLite가 필요함)
+
+```bash
+# 1. SQLite를 설치하기 전에 서버 패키지를 업데이트한다.
+$ yum update
+...
+Is this ok [y/d/N]: y
+...
+Retrieving key from file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+...
+Is this ok [y/N]: y
+...
+Complete!
+
+# 2. SQLite 설치하기
+$ yum install sqlite
+...
+Package sqlite-3.7.17-8.el7.x86_64 already installed and latest version
+
+# 3. SQLite 확인
+$ sqlite3 --version
+SQLite version 3.7.17 2013-05-20 00:56:22
+
+# 4. SQLite 접속
+$ sqlite3
+SQLite version 3.7.17 2013-05-20 00:56:22
+Enter ".help" for usage hints.
+Connected to a transient in-memory database.
+Use ".open FILENAME" to reopen on a persistent database.
+sqlite>
+
+# 5. SQLite 사용 커맨드
+sqlite> .exit 또는 .quit
+sqlite> .table
+```
+
+
+
+svn cleanup 에러시 sqlite3 활용 (새로운 디렉토리 혹은 파일을 커밋하는 과정에서 허가 문제로 인해 발생한 오류로 보임)
+
+```bash
+# svn add 및 commit 과정에서 설치했다 삭제한 파일들로 인해 오류발생. svn cleanup 불가능.
+# 작업 큐에 엉뚱한 값이 들어간 문제.
+# 에러 메시지: "Previous operation has not finished; run 'cleanup' if it was interrupted."
+$ sqlite3 .svn/wc.db "SELECT * FROM work_queue"
+대상 파일 출력
+$ sqlite3 .svn/wc.db "DELETE FROM work_queue"
+# 큐에 있는 파일을 삭제하는 것으로, 물리적 파일은 삭제되지 않는다.
+
+# 만약 svn cleanup 실행시 lock 문제가 발생한다면,
+$ sqlite3 .svn/wc.db "SELECT * FROM work_lock"
+$ sqlite3 .svn/wc.db "DELETE FROM wc_lock"
+```
+
+
+
+이미 삭제된 파일이 svn status상에 존재하며 svn add 되어있을 때, add된 목록에서 제거하기
+
+```bash
+$ svn del --force 파일/디렉토리
+# 물리적 파일과 svn add 목록에서 모두 삭제됨.
+
+# 충돌시 해결
+$ svn resolved 파일/디렉토리
+```
+
+
+
+
+
+ref) https://blog.naver.com/lhw4417/221765640092
+
+
+
+
+
+
+
+
+
