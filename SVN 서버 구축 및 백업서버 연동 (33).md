@@ -99,6 +99,8 @@ ref) https://blog.naver.com/slimcdp/222455611252
 
 ##  TroubleShooting
 
+
+
 1. E205007
 
 ```bash
@@ -180,12 +182,39 @@ $ sqlite3 .svn/wc.db "DELETE FROM wc_lock"
 이미 삭제된 파일이 svn status상에 존재하며 svn add 되어있을 때, add된 목록에서 제거하기
 
 ```bash
-$ svn del --force 파일/디렉토리
+# add 목록에서만 파일 삭제
+$ svn delete --keep-local 파일
+
 # 물리적 파일과 svn add 목록에서 모두 삭제됨.
+$ svn del --force 파일/디렉토리
 
 # 충돌시 해결
 $ svn resolved 파일/디렉토리
 ```
+
+
+
+3. E160028 Commit failed
+
+```bash
+$ svn commit -m "E160028"
+파일 데이터 전송중 .svn: E160028: 커밋이 실패하였습니다:
+svn: E160028: '/trunk/test.txt'(이)가 오래되었습니다
+
+# 해당 파일이 오래된 경우 발생, svn update를 먼저 진행하고 commit 해주면 된다.
+$ svn update
+리비전 35.
+충돌 상황 요약:
+    트리 충돌 개수: 1
+$ svn resolved test.txt
+충돌 상황 해제됨 'test.txt'
+```
+
+
+
+
+
+
 
 
 

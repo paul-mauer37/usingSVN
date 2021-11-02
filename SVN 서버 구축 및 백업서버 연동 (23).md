@@ -92,12 +92,20 @@ $ svn updata -r 리비전번호
 --- 파일을 수정하거나 새로운 파일을 생성 혹은 존재하던 파일을 삭제하는 등 변화가 발생할 경우,
 $ svn status				# 저장소 변동사항 확인
 $ svn add 변동파일				# 변동된 파일을 add 해준다.
+$ svn add * --force				# 모든 파일 강제 add
+$ svn add . --force				# 모든 파일 강제 add
 $ svn commit -m '로그 메시지'		# add된 파일을 commit하며 로그 메시지를 남긴다.
 --- commit이 이루어지면 새로운 리비전으로 기록되며 svn서버 저장소에 반영된다.
 # svn status 해석 : https://svnbook.red-bean.com/en/1.8/svn.ref.svn.c.status.html
 
 # 3-3. 저장소 내 파일 또는 디렉토리 삭제
 $ svn delete svn://localhost/저장소/삭제디렉토리
+# SVN 서버에서 삭제 후, update해서 로컬에 반영시킴
+$ svn update
+# svn delete 명령으로 제거되는 것은 svn 서버에 업로드된 파일이며, 로컬 디렉토리에는 여전히 존재한다. 이를 svn update를 통해 로컬에 반영해주어야 한다.
+# 로컬에서 먼저 삭제 하고 commit을 통해 svn 서버에 반영하는 것은 충돌 발생.
+# E160028 오류 발생시 svn update와 svn resolved를 이용.
+
 
 # 3-4. 리비전 로그 확인
 $ svn log
