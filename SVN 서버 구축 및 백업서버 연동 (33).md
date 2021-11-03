@@ -212,6 +212,19 @@ $ svn resolved test.txt
 
 
 
+4. E000013 Unable to connect to a repository at URL
+
+```bash
+$ svn checkout svn://localhost/repo
+svn: E000013: Unable to connect to a repository at URL 'svn://localhost/repo'
+svn: E000013: file '/home/svn/repo/format' 를 열 수 없습니다: 허가 거부
+
+# selinux 보안상의 문제로 보임
+$ chcon -R -t svnserve_content_t/home/svn/repo
+
+# 검색 결과 해결책으로 제시됨. 필자는 해결되지 않았음. 
+```
+
 
 
 
@@ -222,7 +235,7 @@ $ svn resolved test.txt
 
 ref) https://blog.naver.com/lhw4417/221765640092
 
-
+ref) https://blog.hometown.co.kr/596?category=306849
 
 
 
