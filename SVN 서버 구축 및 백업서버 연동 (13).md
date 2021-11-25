@@ -208,6 +208,9 @@ $ firewall-cmd --permanent --zone=public --add-port=3695/tcp
 --- 3695 포트 tcp 방식으로 방화벽 열기(외부 접근 허용)
 success
 
+$ firewall-cmd --permanent --zone=public --remove-port=3695/tcp
+--- 3695 포트 방화벽 닫기
+
 $ firewall-cmd --reload
 --- 방화벽을 리로드해주어야 설정 변경이 적용된다. 단순히 포트를 껏다 켜서는 적용되지 않는다!
 success
@@ -319,7 +322,6 @@ $chkconfig --list svnserve
 ref) https://goddaehee.tistory.com/81
 
 ref) https://blog.naver.com/sumni10/222177345482
-
 
 
 
